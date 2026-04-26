@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { type FleetInput, type BattleResult } from "@/lib/combat";
 import { shipDatabase } from "@/lib/shipDatabase";
 
@@ -10,6 +10,8 @@ interface BattleRecord {
   fleetB: FleetInput;
   result: BattleResult;
 }
+
+const shipTypes = ["light", "medium", "heavy"] as const;
 
 const createEmptyFleet = (): FleetInput => ({
   light: 0,
@@ -29,6 +31,10 @@ function cloneFleet(fleet: FleetInput): FleetInput {
   return { ...fleet };
 }
 
+function calculateLocalPower(fleet: FleetInput): number {
+  return shipTypes.reduce((total, shipType) => total + fleet[shipType] * shipDatabase[shipType].power, 0);
+}
+
 export default function Home() {
   const [fleetA, setFleetA] = useState<FleetInput>(createEmptyFleet());
   const [fleetB, setFleetB] = useState<FleetInput>(createEmptyFleet());
@@ -36,6 +42,10 @@ export default function Home() {
   const [battleHistory, setBattleHistory] = useState<BattleRecord[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isResolving, setIsResolving] = useState(false);
+
+  const localFleetAPower = useMemo(() => calculateLocalPower(fleetA), [fleetA]);
+  const localFleetBPower = useMemo(() => calculateLocalPower(fleetB), [fleetB]);
+  const largestPower = Math.max(localFleetAPower, localFleetBPower, 1);
 
   const updateFleet = (
     fleetName: "A" | "B",
@@ -114,10 +124,63 @@ export default function Home() {
         </ul>
       </section>
 
+      <section className="card">
+        <h2>Visual Battle Representation</h2>
+        <p>Live view of fleet composition and relative total power before you resolve.</p>
+
+        <div className="powerCompare">
+          <div>
+            <strong>Fleet A Power: {localFleetAPower}</strong>
+            <div className="powerBarOuter">
+              <div className="powerBar fleetABar" style={{ width: `${(localFleetAPower / largestPower) * 100}%` }} />
+            </div>
+          </div>
+          <div>
+            <strong>Fleet B Power: {localFleetBPower}</strong>
+            <div className="powerBarOuter">
+              <div className="powerBar fleetBBar" style={{ width: `${(localFleetBPower / largestPower) * 100}%` }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid">
+          <div>
+            <h3>Fleet A Composition</h3>
+            {shipTypes.map((shipType) => (
+              <div key={`a-viz-${shipType}`} className="shipVizRow">
+                <span>{shipDatabase[shipType].name}</span>
+                <div className="powerBarOuter">
+                  <div
+                    className="powerBar shipTypeBar"
+                    style={{ width: `${Math.min(fleetA[shipType] * 10, 100)}%` }}
+                  />
+                </div>
+                <span>{fleetA[shipType]}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <h3>Fleet B Composition</h3>
+            {shipTypes.map((shipType) => (
+              <div key={`b-viz-${shipType}`} className="shipVizRow">
+                <span>{shipDatabase[shipType].name}</span>
+                <div className="powerBarOuter">
+                  <div
+                    className="powerBar shipTypeBar"
+                    style={{ width: `${Math.min(fleetB[shipType] * 10, 100)}%` }}
+                  />
+                </div>
+                <span>{fleetB[shipType]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <div className="grid">
         <section className="card">
           <h2>Fleet A Input</h2>
-          {(["light", "medium", "heavy"] as const).map((ship) => (
+          {shipTypes.map((ship) => (
             <div className="field" key={`a-${ship}`}>
               <label htmlFor={`a-${ship}`}>{ship[0].toUpperCase() + ship.slice(1)} Ships</label>
               <input
@@ -133,7 +196,7 @@ export default function Home() {
 
         <section className="card">
           <h2>Fleet B Input</h2>
-          {(["light", "medium", "heavy"] as const).map((ship) => (
+          {shipTypes.map((ship) => (
             <div className="field" key={`b-${ship}`}>
               <label htmlFor={`b-${ship}`}>{ship[0].toUpperCase() + ship.slice(1)} Ships</label>
               <input
