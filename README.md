@@ -1,6 +1,6 @@
 # Fleet Combat Resolver (Next.js)
 
-This project is a **Next.js** app (App Router).
+This project is a **Next.js** app.
 
 ## Local run
 
@@ -9,13 +9,17 @@ npm install
 npm run dev
 ```
 
-## Vercel deployment notes (404 fix)
+## Vercel 404 (`NOT_FOUND`) fix checklist
 
-If you see a Vercel `404 NOT_FOUND` page:
+If Vercel shows `404: NOT_FOUND`, verify these settings and redeploy:
 
-1. In Vercel project settings, make sure **Root Directory** is the repository root (where `package.json` is located).
-2. Framework should be **Next.js** (the included `vercel.json` enforces this).
-3. Build command should be `npm run build` and install command `npm install`.
-4. Redeploy after changing settings.
+1. **Root Directory** must be the repo root (where `package.json` is).
+2. **Framework Preset** should be **Next.js**.
+3. Remove any custom **Output Directory** value.
+4. Keep build command as `npm run build` (or default for Next.js).
+5. Confirm the deployment logs include Next.js route generation.
 
-The app route is `/` (`app/page.tsx`) and the API route is `/api/resolve`.
+This repo includes:
+- `/` page route in `app/page.tsx`
+- `/api/resolve` API route in `app/api/resolve/route.ts`
+- `vercel.json` using `@vercel/next` builder to force Next.js deployment
